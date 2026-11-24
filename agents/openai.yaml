@@ -1,0 +1,5 @@
+interface:
+  display_name: "Ship Feature"
+  short_description: "Deliver features with fresh ticket agents and final review"
+policy:
+  allow_implicit_invocation: false
