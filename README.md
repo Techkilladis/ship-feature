@@ -12,15 +12,17 @@ npx skills add Techkilladis/ship-feature
 
 The installer lets you choose the skill, the coding agents, and project or global scope. Choose **Global** to use the skill across projects for the agents you select. Select every agent if you want it available in all your installed coding agents. You can instead select only Antigravity, Codex, Claude Code, or another supported agent.
 
-For a non-interactive install to a particular agent, use `-g -a <agent-id> -y`, for example:
+For an Antigravity-only global install, run this in PowerShell or another system terminal:
 
 ```sh
-npx skills add Techkilladis/ship-feature -g -a antigravity -y
+npx skills add Techkilladis/ship-feature -g -a antigravity
 ```
 
-Run `npx skills list -g` to check global installations. Invoke the skill as `$ship-feature` in an agent that supports skill invocation.
+The installer places the skill under `~/.gemini/config/skills/ship-feature/`, where Antigravity loads global skills. In Antigravity, invoke it with `/ship-feature`. Restart the app or reload skills if it was already open. For another agent, use the interactive picker or pass its ID with `-a`.
 
-See the [Skills CLI reference](https://github.com/vercel-labs/skills/blob/main/docs/commands.md) for agent IDs and installation options.
+Run `npx skills list -g` to check global installations.
+
+See the [Skills CLI agent table](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) and [Antigravity skill docs](https://antigravity.google/docs/skills) for installation paths and invocation.
 
 ## Bundled references
 
