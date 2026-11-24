@@ -1,22 +1,18 @@
 ---
 name: to-spec
-description: "Turn the current conversation into a spec and publish it to the project issue tracker: no interview, just synthesis of what you've already discussed."
+description: "Synthesize a confirmed design into a local spec with user stories, implementation decisions, and testing seams."
 disable-model-invocation: true
 ---
 
-This skill takes the current conversation context and codebase understanding and produces a spec. Do NOT interview the user; just synthesize what you already know.
-
-The issue tracker and triage label vocabulary should have been provided to you. If not, tell the user to run `/setup-matt-pocock-skills`.
+Read the confirmed grill brief and relevant codebase context. Synthesize the spec without reopening settled design questions. The setup agent creates the GitHub spec issue later.
 
 ## Process
 
 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the spec, and respect any ADRs in the area you're touching.
 
-2. Sketch out the seams at which you're going to test the feature. Existing seams should be preferred to new ones. Use the highest seam possible. If new seams are needed, propose them at the highest point you can. The fewer seams across the codebase, the better - the ideal number is one.
+2. Carry forward the testing seams confirmed during grilling. Prefer existing public seams and the highest viable boundary. If a seam is missing or conflicts with the codebase, report the decision to the coordinator before implementation.
 
-Check with the user that these seams match their expectations.
-
-3. Write the spec using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
+3. Write the spec to the path supplied by the coordinator using the template below.
 
 <spec-template>
 

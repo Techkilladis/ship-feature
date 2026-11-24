@@ -1,29 +1,83 @@
 # Ship Feature
 
-An agent skill for taking a feature from requirements through a spec, tickets, implementation, final tests and review, and a pull request. The coordinator starts a fresh implementer for each ready ticket. Independent tickets can run in parallel; a separate agent integrates each parallel batch. A single-ticket batch is integrated by its implementer.
+**A coordinated workflow for shipping a feature from requirements to a reviewed pull request.**
+
+Ship Feature keeps the main agent responsible for the ticket graph and gives each implementer exactly one ticket. Independent tickets run in parallel in separate Git worktrees. A single-ticket batch advances the feature branch directly; a parallel batch is combined by a fresh integration agent. Final tests and code review run against the same feature commit before a PR is opened.
+
+## Workflow
+
+```mermaid
+flowchart LR
+  A[Requirements interview] --> B[Spec]
+  B --> C[Dependency-aware tickets]
+  C --> D[Fresh agent per ready ticket]
+  D --> E{Ready tickets}
+  E -->|One| F[Implementer advances feature branch]
+  E -->|Several| G[Integration agent combines batch]
+  F --> H{Tickets remaining?}
+  G --> H
+  H -->|Yes| D
+  H -->|No| I[Final tests and code review]
+  I -->|Findings| J[Repair and rerun]
+  J --> I
+  I -->|Clean| K[Pull request]
+  K --> L[User confirms merge]
+```
+
+The coordinator reports each integrated batch in the main conversation. Dependent tickets start only after their prerequisites are present on the shared feature branch. GitHub issues close after that branch is pushed, and the final review and test reports must refer to the same commit.
+
+## Requirements
+
+- A Git repository hosted on GitHub, with `git` and an authenticated [GitHub CLI](https://cli.github.com/) (`gh`).
+- An agent host that can launch fresh subagents and use Git worktrees. Parallel work requires concurrent subagents.
+- Node.js 22.20 or later to run the [Skills CLI](https://github.com/vercel-labs/skills) installer. Node.js is needed for installation, not for the skill's workflow.
+
+The workflow uses the repository's default branch as its PR base, creates a `feat/<slug>` branch, and writes spec, ticket, and report artifacts under `.scratch/<slug>/`. It also creates GitHub issues and, after the final checks pass, a pull request. It waits for explicit user confirmation before merging into the default branch.
 
 ## Install
 
-Requires Node.js 22.20 or later. From a terminal, run:
+Run the installer in your system terminal:
 
 ```sh
 npx skills add Techkilladis/ship-feature
 ```
 
-The installer lets you choose the skill, the coding agents, and project or global scope. Choose **Global** to use the skill across projects for the agents you select. Select every agent if you want it available in all your installed coding agents. You can instead select only Antigravity, Codex, Claude Code, or another supported agent.
+The interactive installer lets you choose agents and whether the skill is available in the current project or globally across projects. Global scope applies to the agents you select; choose every agent if you want it available everywhere.
 
-For an Antigravity-only global install, run this in PowerShell or another system terminal:
+| Target | Global install command | Invoke |
+| --- | --- | --- |
+| Antigravity | `npx skills add Techkilladis/ship-feature -g -a antigravity` | `/ship-feature` |
+| Codex | `npx skills add Techkilladis/ship-feature -g -a codex` | `$ship-feature` |
+| Claude Code | `npx skills add Techkilladis/ship-feature -g -a claude-code` | `/ship-feature` |
+
+Antigravity reads global skills from `~/.gemini/config/skills/`. If it was already open during installation, restart it or reload skills. The installer command is **`npx skills`** (plural); `npx skill` is a different package. See the [supported-agent paths](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) and [Antigravity's skill documentation](https://antigravity.google/docs/skills).
+
+To check installed global skills:
 
 ```sh
-npx skills add Techkilladis/ship-feature -g -a antigravity
+npx skills list -g
 ```
 
-The installer places the skill under `~/.gemini/config/skills/ship-feature/`, where Antigravity loads global skills. In Antigravity, invoke it with `/ship-feature`. Restart the app or reload skills if it was already open. For another agent, use the interactive picker or pass its ID with `-a`.
+## Operating model
 
-Run `npx skills list -g` to check global installations.
+| Owner | Responsibility | Handoff |
+| --- | --- | --- |
+| Main agent | Interviews the user, tracks ticket dependencies, dispatches fresh agents, and reports progress | Ready ticket IDs and the current feature commit |
+| Ticket implementer | Completes one ticket in its own worktree and branch | Ticket branch and commit |
+| Integration agent | Combines a parallel batch and resolves real conflicts | Pushed feature commit and closed issues |
+| Test and review agents | Check the complete feature independently | Reports tied to one commit |
+| Repair agent | Addresses final findings | New feature commit for both checks to rerun |
 
-See the [Skills CLI agent table](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) and [Antigravity skill docs](https://antigravity.google/docs/skills) for installation paths and invocation.
+For one ready ticket, its implementer advances the feature branch and closes that issue; there is no extra integration agent. For several ready tickets, implementers push separate branches and the integration agent combines them once. A failed batch holds its dependents until integration succeeds.
 
-## Bundled references
+## Control points and recovery
 
-The files under `references/` include material from [Matt Pocock's skills](https://github.com/mattpocock/skills). They are distributed under the MIT license in [references/LICENSE](references/LICENSE).
+- **Design:** The user confirms the requirements interview before the spec is written.
+- **Integration:** A ticket unblocks its dependents only when its commit is on the remote feature branch. A closed issue alone is not enough.
+- **Verification:** Final tests and the two-axis review must cover the same feature commit. Any repair triggers both checks again.
+- **Merge:** The PR remains unmerged until the user confirms it. Existing worktree changes are preserved.
+- **Resume:** The coordinator records issue IDs, blockers, branch commits, and reports in `.scratch/<slug>/run-state.md`, then reconciles that record with GitHub before continuing an interrupted run.
+
+## Reference material
+
+The workflow is defined in [SKILL.md](SKILL.md). Phase-specific guidance lives in [references/](references/), including ticket slicing, test-driven implementation, code review, and PR preparation. Bundled reference material adapted from [Matt Pocock's skills](https://github.com/mattpocock/skills) is distributed with its [MIT license notice](references/LICENSE).

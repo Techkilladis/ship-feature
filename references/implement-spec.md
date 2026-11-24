@@ -10,7 +10,7 @@ The coordinator owns the ticket graph. A ticket is ready when every blocking tic
 
 ## Setup
 
-Use a fresh setup subagent to create and push `feat/<feature-slug>` from `main`, create the parent GitHub issue and ticket issues, and return the issue numbers and feature branch commit. The coordinator records that commit as the first batch base.
+Use a fresh setup subagent to create or resume `feat/<feature-slug>` from the detected default branch, create or reuse the parent GitHub issue and ticket issues, and return their numbers and the remote feature commit. The coordinator records that commit as the first batch base. Reconcile an existing run before creating anything new.
 
 ## Ticket batches
 
@@ -19,8 +19,8 @@ For each ready ticket, start a fresh implementer in its own worktree on `work/<t
 - **One ready ticket:** Its implementer verifies that its branch descends from the batch base, then fast-forwards the remote feature branch with `git push origin HEAD:refs/heads/feat/<feature-slug>`. It closes its issue after the push succeeds and reports the new feature branch commit. No integration subagent is needed.
 - **Multiple ready tickets:** Each implementer pushes only its own `work/<ticket-slug>` branch and reports the branch and commit. After every implementer in the batch has reported, start one fresh integration subagent. It combines those branches into `feat/<feature-slug>`, resolves actual conflicts, pushes that branch once, closes the batch's issues after the push succeeds, and reports the new feature branch commit. A branch that could not be integrated keeps its issue open.
 
-Only a receipt confirming the updated feature branch commit unblocks dependent tickets. The coordinator reports each completed batch to the user, recomputes the frontier, and starts new agents for the next batch. If a ticket or batch cannot finish, use a fresh repair subagent and keep dependent tickets waiting for integration.
+Only a receipt confirming the updated **remote** feature branch commit unblocks dependent tickets. The coordinator reports each completed batch to the user, recomputes the frontier, and starts new agents for the next batch. If a ticket or batch cannot finish, use a fresh repair subagent and keep dependent tickets waiting for integration.
 
 ## Final checks
 
-After all batches, run a fresh test agent and a fresh code review agent in separate worktrees against the same feature branch commit. A fresh repair agent fixes and pushes failures or blocking review findings. Rerun both checks against each repaired commit until both pass. Then create the PR using the final reports and leave the merge into `main` for the user's final confirmation.
+After all batches, run a fresh test agent and a fresh code review agent in separate worktrees against the same feature branch commit. A fresh repair agent fixes and pushes failures or blocking review findings. Rerun both checks against each repaired commit until both pass. Then create the PR using the final reports and leave the merge into the default branch for the user's final confirmation.
